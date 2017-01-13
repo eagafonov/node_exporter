@@ -29,13 +29,14 @@ const (
 )
 
 type statCollector struct {
-	cpu          *prometheus.Desc
-	intr         *prometheus.Desc
-	ctxt         *prometheus.Desc
-	forks        *prometheus.Desc
-	btime        *prometheus.Desc
-	procsRunning *prometheus.Desc
-	procsBlocked *prometheus.Desc
+	cpu            *prometheus.Desc
+	intr           *prometheus.Desc
+	ctxt           *prometheus.Desc
+	forks          *prometheus.Desc
+	btime          *prometheus.Desc
+	procsRunning   *prometheus.Desc
+	procsBlocked   *prometheus.Desc
+	coresAvailable *prometheus.Desc
 }
 
 func init() {
@@ -81,6 +82,11 @@ func NewStatCollector() (Collector, error) {
 			"Number of processes blocked waiting for I/O to complete.",
 			nil, nil,
 		),
+		coresAvailable: prometheus.NewDesc(
+			prometheus.BuildFQName(Namespace, "", "cpu_core_available"),
+			"Number of CPU cores available.",
+			nil, nil,
+		),
 	}, nil
 }
 
@@ -91,6 +97,8 @@ func (c *statCollector) Update(ch chan<- prometheus.Metric) (err error) {
 		return err
 	}
 	defer file.Close()
+
+	cpuCoresAvailable := float64(0)
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
@@ -120,6 +128,7 @@ func (c *statCollector) Update(ch chan<- prometheus.Metric) (err error) {
 				value /= userHz
 				ch <- prometheus.MustNewConstMetric(c.cpu, prometheus.CounterValue, value, parts[0], cpuFields[i])
 			}
+			cpuCoresAvailable += 1
 		case parts[0] == "intr":
 			// Only expose the overall number, use the 'interrupts' collector for more detail.
 			value, err := strconv.ParseFloat(parts[1], 64)
@@ -159,5 +168,8 @@ func (c *statCollector) Update(ch chan<- prometheus.Metric) (err error) {
 			ch <- prometheus.MustNewConstMetric(c.procsBlocked, prometheus.GaugeValue, value)
 		}
 	}
+
+	ch <- prometheus.MustNewConstMetric(c.coresAvailable, prometheus.GaugeValue, cpuCoresAvailable)
+
 	return err
 }
