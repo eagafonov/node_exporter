@@ -159,6 +159,9 @@ node_cpu{cpu="cpu7",mode="softirq"} 0.31
 node_cpu{cpu="cpu7",mode="steal"} 0
 node_cpu{cpu="cpu7",mode="system"} 101.64
 node_cpu{cpu="cpu7",mode="user"} 290.98
+# HELP node_cpu_core_available Number of CPU cores available.
+# TYPE node_cpu_core_available gauge
+node_cpu_core_available 8
 # HELP node_disk_bytes_read The total number of bytes read successfully.
 # TYPE node_disk_bytes_read counter
 node_disk_bytes_read{device="dm-0"} 5.13708655616e+11
